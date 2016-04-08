@@ -1,27 +1,39 @@
 import socket
 
-UDP_IP = "localhost"
-UDP_PORT = 5005
+CMD_REGISTER = "REGISTER"
+MSG_REGISTER_OK = "REGISTER OK"
+MSG_REGISTER_FAULT = "REGISTER FAULT"
+
+SERVER_PORT = 5005
 
 USER_DATA = []
+addrs   = {} # dict: nome -> endereco. Ex: addrs["user"]=('127.0.0.1',17234)
+clients = {} # dict: endereco -> nome. Ex: clients[('127.0.0.1',17234)]="user"
 
-def registerPlayer(playName):
-    USER_DATA.append(playName)
-    return
+server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+server.bind(('', SERVER_PORT))
 
-def main():
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.bind((UDP_IP, UDP_PORT))
-    while True:
-        data, addr = sock.recvfrom(1024) # Buffer size
-        print "received message:", data
-        if(data.find("REGISTER"),len(data) > 0):
-            registerPlayer(data[9:len(data)])
+def registerPlayer(name, addr):
+    if not name in addrs and not addr in clients:
+      addrs[name] = addr
+      clients[addr] = name
+      responseToRegister(True, addr)
+      return
+    else:
+      responseToRegister(False, addr)
+      return
 
-        for data in USER_DATA:
-            print data
+def responseToRegister(response, addr):
+    if response:
+        server.sendto(MSG_REGISTER_OK.encode(), addr)
+    else:
+        server.sendto(MSG_REGISTER_FAULT.encode(), addr)
 
-    return
+while True:
+    (msg, addr) = server.recvfrom(1024) # Buffer size
+    cmd = msg.decode().split()
+    if cmd[0] == CMD_REGISTER:
+        registerPlayer(cmd[1], addr)
 
-if __name__ == "__main__":
-    main()
+    if cmd[0] == "EXIT":
+        server.exit()
