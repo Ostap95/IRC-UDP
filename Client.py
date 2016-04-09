@@ -2,7 +2,7 @@ import socket
 import sys
 import select
 from GameLogic import *
-
+## client
 MSG_REGISTER = "REGISTER"
 MSG_OK_RESPONSE = "OK"
 
