@@ -1,34 +1,107 @@
 import socket
 
-CMD_REGISTER = "REGISTER"
-MSG_REGISTER_OK = "REGISTER OK"
-MSG_REGISTER_FAULT = "REGISTER FAULT"
+CMD_REGISTER = "REG"
+MSG_REGISTER_OK = "REG_OK"
+MSG_REGISTER_FAULT = "REG_FAULT"
 
 SERVER_PORT = 5005
+SERVER_HOST = "localhost"
 
-USER_DATA = []
-addrs   = {} # dict: nome -> endereco. Ex: addrs["user"]=('127.0.0.1',17234)
-clients = {} # dict: endereco -> nome. Ex: clients[('127.0.0.1',17234)]="user"
-
+addrs = {} # dict: nome -> endereco. Ex: addrs["user"]=('127.0.0.1',17234)
+clients = {} # dict: endereco -> [nome,msgID,lastReturn] Ex: clients[('127.0.0.1',17234)]=["user", msgID, lastReturn]
+# msgID representa o id da mensagem que tem de receber a seguir
+# lastReturn representa o ultimo valor de retorno enviado para este cliente
+# estes argumentos sao mais mais facil de utilizar na lista de clients porque e' mais facil indexar por endereco
+games = {} # dict: client1->client2 ex: games["Daniel"] = ["Ostap"]
 server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-server.bind(('', SERVER_PORT))
+server.bind((SERVER_HOST, SERVER_PORT))
 
+""" Registers the Player in client dictionary """
+def addToClients(addr, name):
+    clients[addr] = [name, 0, 0]
+
+""" Registers the player """
 def registerPlayer(name, addr):
     if not name in addrs and not addr in clients:
       addrs[name] = addr
-      clients[addr] = name
-      responseToRegister(True, addr)
+      addToClients(addr, name)
+      Send(MSG_REGISTER_OK, addr) # Sends REG_OK to the client
       return
     else:
-      responseToRegister(False, addr)
+      Send(MSG_REGISTER_FAULT, addr) # sends REG_FAULT to the client
       return
 
-def responseToRegister(response, addr):
-    if response:
-        server.sendto(MSG_REGISTER_OK.encode(), addr)
-    else:
-        server.sendto(MSG_REGISTER_FAULT.encode(), addr)
+""" Sends a particular message to the specific address
+ msg: Message | info: additional information to the Message | addr: Adrress to send """
+def Send(msg, addr, info = ""):
+    MSG = msg + info
+    server.sendto(MSG.encode(), addr)
+    return
 
+""" returns name for a given player in a match
+    if no player found returns error
+    boolean delet defaults to false and is used to remove an ingoing game from list if true"""
+def matchNameLookup (name,delet=False):
+    retName=""
+    for i in games:
+        if i == name:
+            if delet == True:
+                del games[name] ## this should delete name from dictionary
+            retName = games[i];
+            break;
+        elif games[i] == name:
+            if delet == True:
+                del games[name] ## this should delete name from dictionary
+            retName = i;
+            break;
+    return retName; # retorna "" se n encontra nome
+
+
+""" args-> address of latest incoming message
+returns addrs for destination client of a given ongoing game"""
+def matchAddrLookup (addr):
+    name=clients[addr][0]
+    lookupName = matchNameLookup(name)
+    if (lookupName==""):
+        return ""
+    for i in addrs:
+        if i == lookupName:
+            return addrs[i];
+
+
+""" addr is address, msgID is sync number
+esta funcao serve para sincronizacao das mensagens"""
+def checkMsgID(addr,msgID,ret):
+    #so' deve de ser < ou >  por 1 TODO check
+    if(clients[addr][1] > msgID): # se for maior e' necessario cliente reenviar
+        SEND ( "NACK", clients[addr][1],addr) ## sends NACK with msgID
+
+    elif(clients[addr][1] < msgID): # se for menor e' necessario servidor reenviar
+        SEND ( clients[addr][2],addr) ## resends last message
+
+    msgID = clients[addr][1] #resets msgID
+
+
+def setLastReturn(addr, returnVal):
+    clients[addr][2] = returnVal;
+
+def getLastReturn(addr):
+    return clients[addr][2];
+
+def incrementMessageID(addr):
+    clients[addr][2] +=1;
+
+def play(addr, DestName):
+     """ """
+
+def listNames():
+    buff=""; #tamanho de recvfrom 1024, ver consequencias em clients
+    for i in addrs:
+        buff += i + " "; # dividir por um espaco para poder fazer split em clnt
+    return buff;
+
+
+""" Main Loop """
 while True:
     (msg, addr) = server.recvfrom(1024) # Buffer size
     cmd = msg.decode().split()
