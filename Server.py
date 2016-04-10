@@ -5,7 +5,7 @@ MSG_REGISTER_OK = "REG_OK"
 MSG_REGISTER_FAULT = "REG_FAULT"
 
 SERVER_PORT = 5005
-SERVER_HOST = "localhost"
+SERVER_HOST = "127.0.0.1"
 
 addrs = {} # dict: nome -> endereco. Ex: addrs["user"]=('127.0.0.1',17234)
 clients = {} # dict: endereco -> [nome,msgID,lastReturn] Ex: clients[('127.0.0.1',17234)]=["user", msgID, lastReturn]
