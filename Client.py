@@ -10,6 +10,12 @@ MSG_REG_OK_RESPONSE = "REG_OK"
 MSG_REG_FAULT_RESPONSE = "REG_FAULT"
 MSG_LIST = "LIST"
 MSG_LIST_RESPONSE = "LIST_RETURN"
+MSG_INVITE = "ACCEPT"
+MSG_RECEIVED = "ACK"
+MSG_ACCPET_INVITE = "OK"
+MSG_REJECT_INVITE = "NO"
+MSG_INVITE_RESPOSNE = "INVITE"
+
 
 SERVER_IP = "127.0.0.1"
 SERVER_PORT = 5005
@@ -43,12 +49,21 @@ def printPlayerList(msg):
         print msg[i]
     print "------------------------------"
 
+def acceptInvite(msg):
+    msg = msg.split()
+    name = msg[1]
+    print name + " Convidou-o para jogar. Aceitar? "
+
 """ MessageInterpreter interpretes the message received from the server"""
 def MessageInterpreter(msg):
     if MSG_REGISTER in msg: # Registration Message
         RegistrationInfo(msg)
     if MSG_LIST_RESPONSE in msg:
         printPlayerList(msg) # List Message
+    if MSG_INVITE in msg:
+        acceptInvite(msg)
+    if MSG_INVITE_RESPOSNE in msg:
+        print "Jogo aceite"
 
 """ Message to be sent to the server """
 def sendMessage(socket, msg, server):
@@ -58,13 +73,16 @@ def sendMessage(socket, msg, server):
     # If the server haven't given any response whithin 3 seconds, then the client tries more 2 times to resent the message
     # After it, client displays a message saying that the server is offline
 
+""" ----------------------------------------------------------"""
 signal.signal(signal.SIGALRM, timeOutHandler) # Timeout signal handler
 client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # Socket used to communicate with the server
 # Select will wait for the socket and console input
 inputs = [client, sys.stdin]
 board = GameLogic()
+""" ----------------------------------------------------------"""
 
-""" Main Loop """
+
+""" --------------------- Main Loop --------------------------"""
 while True:
     ins, outs, exs = select.select(inputs,[],[],0)
     #select devolve para a lista ins quem esta a espera de ler
@@ -82,3 +100,4 @@ while True:
             signal.alarm(0) # Resets the timeout, since the message was received
             message = msg.decode()
             MessageInterpreter(message)
+""" ----------------------------------------------------------"""
