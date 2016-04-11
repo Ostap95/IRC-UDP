@@ -8,18 +8,20 @@ from GameLogic import *
 MSG_REGISTER = "REG"
 MSG_REG_OK_RESPONSE = "REG_OK"
 MSG_REG_FAULT_RESPONSE = "REG_FAULT"
+MSG_LIST = "LIST"
+MSG_LIST_RESPONSE = "LIST_RETURN"
 
 SERVER_IP = "127.0.0.1"
 SERVER_PORT = 5005
 BUFF_SIZE = 1024 # Buffer size
 
-LAST_MSG = ["",]
+LAST_MSG = [""] # Last message sent by the client to the server
 
-global tries
+global tries # Number of times that the client tried to resent the message
 
 """ Functions that is responsible for timeout situations """
 def timeOutHandler(s, f):
-    global tries
+    global tries # Number of times that the client tried to resent the message
     if tries < 2:
         sendMessage(client, LAST_MSG[0], (SERVER_IP,SERVER_PORT))
         tries += 1
@@ -33,10 +35,20 @@ def RegistrationInfo(msg):
     elif msg == MSG_REG_FAULT_RESPONSE:
         print "Registo falhou. O jogador ja esta registado no servidor"
 
+""" Prints the Player list received from the server """
+def printPlayerList(msg):
+    msg = msg.split()
+    print "------- Online Players -------"
+    for i in range(1,len(msg)):
+        print msg[i]
+    print "------------------------------"
+
 """ MessageInterpreter interpretes the message received from the server"""
 def MessageInterpreter(msg):
-    if msg.find(MSG_REGISTER, len(message)): # Registration Message
+    if MSG_REGISTER in msg: # Registration Message
         RegistrationInfo(msg)
+    if MSG_LIST_RESPONSE in msg:
+        printPlayerList(msg) # List Message
 
 """ Message to be sent to the server """
 def sendMessage(socket, msg, server):
@@ -51,6 +63,8 @@ client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # Socket used to commu
 # Select will wait for the socket and console input
 inputs = [client, sys.stdin]
 board = GameLogic()
+
+""" Main Loop """
 while True:
     ins, outs, exs = select.select(inputs,[],[],0)
     #select devolve para a lista ins quem esta a espera de ler
@@ -61,7 +75,7 @@ while True:
             msg = sys.stdin.readline()
             # envia mensagem da consola para o servidor
             sendMessage(client, msg, (SERVER_IP,SERVER_PORT))
-            tries = 0
+            tries = 0 # Resets the timeout tries
             # i == client - o servidor enviou uma mensagem para o socket
         if i == client:
             (msg,addr) = client.recvfrom(BUFF_SIZE)

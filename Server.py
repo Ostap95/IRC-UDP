@@ -3,12 +3,14 @@ import socket
 CMD_REGISTER = "REG"
 MSG_REGISTER_OK = "REG_OK"
 MSG_REGISTER_FAULT = "REG_FAULT"
+CMD_LIST = "LIST"
+MSG_LIST_RETURN = "LIST_RETURN"
 
 SERVER_PORT = 5005
 SERVER_HOST = "127.0.0.1"
 
 addrs = {} # dict: nome -> endereco. Ex: addrs["user"]=('127.0.0.1',17234)
-clients = {} # dict: endereco -> [nome,msgID,lastReturn] Ex: clients[('127.0.0.1',17234)]=["user", msgID, lastReturn]
+clients = {} # dict: endereco -> [nome,msgID,lastReturn] Ex: clients[('127.0.0.1',17234)]=["user", "estado",msgID, lastReturn]
 # msgID representa o id da mensagem que tem de receber a seguir
 # lastReturn representa o ultimo valor de retorno enviado para este cliente
 # estes argumentos sao mais mais facil de utilizar na lista de clients porque e' mais facil indexar por endereco
@@ -18,7 +20,7 @@ server.bind((SERVER_HOST, SERVER_PORT))
 
 """ Registers the Player in client dictionary """
 def addToClients(addr, name):
-    clients[addr] = [name, 0, 0]
+    clients[addr] = [name, "livre", 0, 0]
 
 """ Registers the player """
 def registerPlayer(name, addr):
@@ -94,10 +96,11 @@ def incrementMessageID(addr):
 def play(addr, DestName):
      """ """
 
+""" Lists player names and their state """
 def listNames():
     buff=""; #tamanho de recvfrom 1024, ver consequencias em clients
-    for i in addrs:
-        buff += i + " "; # dividir por um espaco para poder fazer split em clnt
+    for key in clients:
+        buff += clients[key][0] + ":" + clients[key][1] + " "; # dividir por um espaco para poder fazer split em clnt
     return buff;
 
 
@@ -107,6 +110,8 @@ while True:
     cmd = msg.decode().split()
     if cmd[0] == CMD_REGISTER:
         registerPlayer(cmd[1], addr)
-
-    if cmd[0] == "EXIT":
+    elif cmd[0] == CMD_LIST:
+        pList = listNames()
+        Send(MSG_LIST_RETURN + " " + pList, addr)
+    elif cmd[0] == "EXIT":
         server.close()
