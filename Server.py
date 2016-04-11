@@ -109,4 +109,4 @@ while True:
         registerPlayer(cmd[1], addr)
 
     if cmd[0] == "EXIT":
-        server.exit()
+        server.close()
