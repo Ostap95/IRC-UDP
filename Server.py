@@ -9,13 +9,15 @@ CMD_PLAY = "PLAY"
 MSG_INVITE = "ACCEPT"
 MSG_RECEIVED = "ACK"
 MSG_INVITE_RESPOSNE = "INVITE"
+MSG_ACCEPT_INVITE = "OK"
+MSG_REJECT_INVITE = "NO"
 
 
 SERVER_PORT = 5005
 SERVER_HOST = "127.0.0.1"
 
 addrs = {} # dict: nome -> endereco. Ex: addrs["user"]=('127.0.0.1',17234)
-clients = {} # dict: endereco -> [nome,msgID,lastReturn] Ex: clients[('127.0.0.1',17234)]=["user",msgID, lastReturn,"estado", "invite"]
+clients = {} # dict: endereco -> [nome,msgID,lastReturn] Ex: clients[('127.0.0.1',17234)]=["user",msgID, lastReturn,"estado", "player who invited to play"]
 # msgID representa o id da mensagem que tem de receber a seguir
 # lastReturn representa o ultimo valor de retorno enviado para este cliente
 # estes argumentos sao mais mais facil de utilizar na lista de clients porque e' mais facil indexar por endereco
@@ -109,14 +111,20 @@ def listNames():
 def invitePlayer(mainPlayerAddress, playerToInvite):
     mainPlayerName = clients[mainPlayerAddress][0]
     playerToInviteAdress = addrs[playerToInvite]
-    clients[playerToInviteAdress][4] = mainPlayerName
-    Send(MSG_RECEIVED, mainPlayerAddress)
-    Send(MSG_INVITE + " " + mainPlayerName, playerToInviteAdress);
+    if clients[playerToInviteAdress][3] == "livre":
+        clients[playerToInviteAdress][4] = mainPlayerName
+        Send(MSG_RECEIVED, mainPlayerAddress)
+        Send(MSG_INVITE + " " + mainPlayerName, playerToInviteAdress);
+    else:
+        Send(MSG_REJECT_INVITE, mainPlayerAddress)
 
 """" Responds to invite from a player """
 def respondToInvite(player, response):
     playerToResponde = clients[player][4]
     addressToResponde = addrs[playerToResponde]
+    if response == MSG_ACCEPT_INVITE:
+        clients[player][3] = "ocupado"
+        clients[addressToResponde][3] = "ocupado"
     Send(MSG_RECEIVED, player)
     Send(MSG_INVITE_RESPOSNE + " " + response, addressToResponde)
 

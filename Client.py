@@ -12,7 +12,7 @@ MSG_LIST = "LIST"
 MSG_LIST_RESPONSE = "LIST_RETURN"
 MSG_INVITE = "ACCEPT"
 MSG_RECEIVED = "ACK"
-MSG_ACCPET_INVITE = "OK"
+MSG_ACCEPT_INVITE = "OK"
 MSG_REJECT_INVITE = "NO"
 MSG_INVITE_RESPOSNE = "INVITE"
 
@@ -54,6 +54,13 @@ def acceptInvite(msg):
     name = msg[1]
     print name + " Convidou-o para jogar. Aceitar? "
 
+def inviteResponse(msg):
+    msg = msg.split()
+    if msg[1] == MSG_ACCEPT_INVITE:
+        print "Jogo Aceite"
+    elif msg[1] == MSG_REJECT_INVITE:
+        print "Jogo recusado"
+
 """ MessageInterpreter interpretes the message received from the server"""
 def MessageInterpreter(msg):
     if MSG_REGISTER in msg: # Registration Message
@@ -63,7 +70,7 @@ def MessageInterpreter(msg):
     if MSG_INVITE in msg:
         acceptInvite(msg)
     if MSG_INVITE_RESPOSNE in msg:
-        print "Jogo aceite"
+        inviteResponse(msg)
 
 """ Message to be sent to the server """
 def sendMessage(socket, msg, server):
