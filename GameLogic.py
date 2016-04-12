@@ -1,37 +1,39 @@
 class GameLogic:
 
-    def __init__(self):
-        self.board = [(  '1',  '2',  '3'),
-                    (  '4',  '4',  '5'),
-                    (  '7',  '8',  '9')]
-        self.nextPlayer = 0
+    def __init__(self, player=2):
+        self.board = [['1',  '2',  '3'],
+                    ['4',  '5',  '6'],
+                    ['7',  '8',  '9']]
         self.numPlays = 0
+        self.player = player
+        self.winner = False
 
     def currentBoard(self):
         print "\n\n " + self.board[0][0] + " | " + self.board[0][1] + " | " + self.board[0][2] + " " + "\n---+---+---\n " + \
         self.board[1][0] + " | " + self.board[1][1] + " | " + self.board[1][2] + " " + "\n---+---+---\n " + self.board[2][0] + \
         " | " + self.board[2][1] + " | " + self.board[2][2] + " \n"
-
         return
 
+    def changePlayer(self, player):
+        self.player = player
+        
+    # play( --play / 3, play % 3, player)
     def play(self, row, column, player):
-        if not (row >= 0 & row < 3 & column >= 0 & column < 3):
+        if not (row >= 0 and row < 3 and column >= 0 and column < 3):
+            print "here"
             return False
         if self.board[row][column] > '9':
-            return False
-        if player != nextPlayer:
             return False
 
         if self.numPlays == 9:
             return False
 
         # Insert player Symbol
-        if player == 0:
+        if player == 1:
             self.board[row][column] = 'X'
         else:
             self.board[row][column] = 'O'
 
-        nextPlayer = (nextPlayer + 1)%2
         self.numPlays += 1
         return True
 
@@ -39,9 +41,9 @@ class GameLogic:
         i = 0
         if (self.board[0][0] == self.board[1][1] & self.board[0][0] == self.board[2][2]) | (self.board[0][2] == self.board[1][1] & self.board[0][2] == self.board[2][0]):
             if self.board[1][1] == 'X':
-                return 1
+                return 1 # Player 1 wins
             else:
-                return 0
+                return 0 # Player 2 wins
         else:
             for i in range(0, 2):
                 if (self.board[i][0] == self.board[i][1] & self.board[i][0] == self.board[i][2]):
@@ -57,6 +59,22 @@ class GameLogic:
                         return 0
 
         if self.numPlays == 9:
-            return 2
+            return 2 # Empate
         else:
             return -1
+
+    """def readPlay():
+        play = 0
+        position = 'X'
+        if self.player == 1:
+            position = 'X'
+        else:
+            position = 'O'
+        while True:
+            print "\n Player " + str(self.player) + ", please enter the number of the square " +\
+            "where you want to place your " + position
+            play = sys.stdin.readline()
+            if play > 9 or play < 0:
+                break
+            return play
+"""

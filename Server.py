@@ -11,6 +11,7 @@ MSG_RECEIVED = "ACK"
 MSG_INVITE_RESPOSNE = "INVITE"
 MSG_ACCEPT_INVITE = "OK"
 MSG_REJECT_INVITE = "NO"
+MSG_CHOICE = "CHOICE"
 
 
 SERVER_PORT = 5005
@@ -27,7 +28,7 @@ server.bind((SERVER_HOST, SERVER_PORT))
 
 """ Registers the Player in client dictionary """
 def addToClients(addr, name):
-    clients[addr] = [name, 0, 0, "livre", " "]
+    clients[addr] = [name, 0, 0, "livre", ""]
 
 """ Registers the player """
 def registerPlayer(name, addr):
@@ -77,9 +78,9 @@ def matchAddrLookup (addr):
         if i == lookupName:
             return addrs[i];
 
-
-""" addr is address, msgID is sync number
-esta funcao serve para sincronizacao das mensagens"""
+"""
+ addr is address, msgID is sync number
+esta funcao serve para sincronizacao das mensagens
 def checkMsgID(addr,msgID,ret):
     #so' deve de ser < ou >  por 1 TODO check
     if(clients[addr][1] > msgID): # se for maior e' necessario cliente reenviar
@@ -98,7 +99,7 @@ def getLastReturn(addr):
     return clients[addr][2];
 
 def incrementMessageID(addr):
-    clients[addr][2] +=1;
+    clients[addr][2] +=1;"""
 
 """ Lists player names and their state """
 def listNames():
@@ -116,17 +117,24 @@ def invitePlayer(mainPlayerAddress, playerToInvite):
         Send(MSG_RECEIVED, mainPlayerAddress)
         Send(MSG_INVITE + " " + mainPlayerName, playerToInviteAdress);
     else:
-        Send(MSG_REJECT_INVITE, mainPlayerAddress)
+        Send(MSG_INVITE + " " + MSG_REJECT_INVITE, mainPlayerAddress)
 
 """" Responds to invite from a player """
-def respondToInvite(player, response):
-    playerToResponde = clients[player][4]
-    addressToResponde = addrs[playerToResponde]
+def respondToInvite(playerAddr, response):
+    playerToRespond = clients[playerAddr][4]
+    addressToRespond = addrs[playerToRespond]
     if response == MSG_ACCEPT_INVITE:
-        clients[player][3] = "ocupado"
-        clients[addressToResponde][3] = "ocupado"
-    Send(MSG_RECEIVED, player)
-    Send(MSG_INVITE_RESPOSNE + " " + response, addressToResponde)
+        clients[playerAddr][3] = "ocupado"
+        clients[addressToRespond][3] = "ocupado"
+        games[playerToRespond] = clients[playerAddr][0] # Fills the game dictionary
+    Send(MSG_RECEIVED, playerAddr)
+    Send(MSG_INVITE_RESPOSNE + " " + response, addressToRespond)
+
+def forwardChoice(playerAddr, choice):
+    adversaryAddr = matchAddrLookup(playerAddr)
+    Send(MSG_RECEIVED, playerAddr)
+    Send(MSG_CHOICE + " " + choice, adversaryAddr)
+
 
 """ Main Loop """
 while True:
@@ -144,6 +152,9 @@ while True:
 
     elif cmd[0] == MSG_INVITE_RESPOSNE:
         respondToInvite(addr, cmd[1])
+
+    elif cmd[0] == MSG_CHOICE:
+        forwardChoice(addr, cmd[1])
 
     elif cmd[0] == "EXIT":
         server.close()
