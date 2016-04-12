@@ -12,6 +12,8 @@ MSG_INVITE_RESPOSNE = "INVITE"
 MSG_ACCEPT_INVITE = "OK"
 MSG_REJECT_INVITE = "NO"
 MSG_CHOICE = "CHOICE"
+MSG_UNRECOGNIZED = "UNRECOGNIZED"
+MSG_WINNER = "WINNER"
 
 
 SERVER_PORT = 5005
@@ -57,14 +59,14 @@ def matchNameLookup (name,delet=False):
         if i == name:
             if delet == True:
                 del games[name] ## this should delete name from dictionary
-            retName = games[i];
-            break;
+            retName = games[i]
+            break
         elif games[i] == name:
             if delet == True:
                 del games[name] ## this should delete name from dictionary
-            retName = i;
+            retName = i
             break;
-    return retName; # retorna "" se n encontra nome
+    return retName # retorna "" se n encontra nome
 
 
 """ args-> address of latest incoming message
@@ -131,9 +133,18 @@ def respondToInvite(playerAddr, response):
     Send(MSG_INVITE_RESPOSNE + " " + response, addressToRespond)
 
 def forwardChoice(playerAddr, choice):
-    adversaryAddr = matchAddrLookup(playerAddr)
+    opponentAddr = matchAddrLookup(playerAddr)
     Send(MSG_RECEIVED, playerAddr)
-    Send(MSG_CHOICE + " " + choice, adversaryAddr)
+    Send(MSG_CHOICE + " " + choice, opponentAddr)
+
+def winnerAnnounce(addr):
+    name = clients[addr][0]
+    #matchNameLookup(name, True)
+    opponentAddr = matchAddrLookup(addr)
+    clients[addr][3] = "livre"
+    clients[opponentAddr][3] = "livre"
+    Send(MSG_RECEIVED, addr)
+    Send(MSG_WINNER, opponentAddr)
 
 
 """ Main Loop """
@@ -156,5 +167,11 @@ while True:
     elif cmd[0] == MSG_CHOICE:
         forwardChoice(addr, cmd[1])
 
+    elif cmd[0] == MSG_WINNER:
+        winnerAnnounce(addr)
+
+
     elif cmd[0] == "EXIT":
         server.close()
+    else:
+        Send(MSG_UNRECOGNIZED, addr)
