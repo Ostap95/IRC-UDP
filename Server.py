@@ -173,5 +173,6 @@ while True:
 
     elif cmd[0] == "EXIT":
         server.close()
+        Send(MSG_RECEIVED, addr)
     else:
         Send(MSG_UNRECOGNIZED, addr)

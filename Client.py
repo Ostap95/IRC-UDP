@@ -56,12 +56,12 @@ def printPlayerList(msg):
 def acceptInvite(msg):
     msg = msg.split()
     name = msg[1]
-    print name + " Invited you to play. Accept? "
+    print name + " Invited you to play. Accept? (INVITE OK / INVITE NO)"
 
 def inviteResponse(msg):
     msg = msg.split()
     if msg[1] == MSG_ACCEPT_INVITE:
-        print "It's your turn, please make a play: "
+        print "It's your turn, please make a play: (CHOICE OK / CHOICE NO)"
         board.currentBoard()
     elif msg[1] == MSG_REJECT_INVITE:
         print "Game Refused!"
@@ -85,7 +85,7 @@ def receiveChoiceGame(msg):
     board.receivePlay( (play-1)/3  , (play-1) % 3)
     board.currentBoard()
     board.changePermission(True)
-    print "It's your turn, please make a play: "
+    print "It's your turn, please make a play: (CHOICE OK / CHOICE NO)"
 
 """ If the client sends the CHOICE message, this function is called to update the board """
 def playChoiceGame(msg):
@@ -94,6 +94,8 @@ def playChoiceGame(msg):
     board.play( (play-1)/3  , (play-1) % 3)
     board.currentBoard()
     board.changePermission(False)
+    if board.checkWinner() == 2 :
+        print ""
     if board.checkWinner() == 1 :
         board.changePermission(True) # To not block the message receiving
         sendMessage(client, MSG_WINNER, (SERVER_IP,SERVER_PORT))

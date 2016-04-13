@@ -1,9 +1,9 @@
 class GameLogic:
 
     def __init__(self, player=1):
-        self.board = [['1',  '2',  '3'],
-                    ['4',  '5',  '6'],
-                    ['7',  '8',  '9']]
+        self.board = [[' ',  ' ',  ' '],
+                    [' ',  ' ',  ' '],
+                    [' ',  ' ',  ' ']]
         self.numPlays = 0
         self.mainPlayer = False
         self.permission = True
@@ -42,7 +42,7 @@ class GameLogic:
             self.board[row][column] = 'X'
         else:
             self.board[row][column] = 'O'
-
+        self.numPlays += 1
         return True
 
 
@@ -63,25 +63,26 @@ class GameLogic:
             self.board[row][column] = 'X'
         else:
             self.board[row][column] = 'O'
-
+        self.numPlays += 1
         return True
 
     def checkWinner(self):
         i = 0
-        if (self.board[0][0] == self.board[1][1] and self.board[0][0] == self.board[2][2]) or (self.board[0][2] == self.board[1][1] and self.board[0][2] == self.board[2][0]):
+        if (self.board[0][0] == self.board[1][1] and self.board[0][0] == self.board[2][2] and self.board[0][0] != ' ') or  +\
+        (self.board[0][2] == self.board[1][1] and self.board[0][2] == self.board[2][0] and self.board[0][2] != ' '):
             if self.board[1][1] == 'X':
                 return 1 # Player 1 wins
             else:
                 return 0 # Player 2 wins
         else:
             for i in range(0, 2):
-                if (self.board[i][0] == self.board[i][1] and self.board[i][0] == self.board[i][2]):
+                if (self.board[i][0] == self.board[i][1] and self.board[i][0] == self.board[i][2] and self.board[i][0] != ' '):
                     if self.board[i][0] == 'X':
                         return 1
                     else:
                         return 0
 
-                if (self.board[0][i] == self.board[1][i] and self.board[0][i] == self.board[2][i]):
+                if (self.board[0][i] == self.board[1][i] and self.board[0][i] == self.board[2][i] and self.board[0][i] != ' '):
                     if self.board[0][i] == 'X':
                         return 1
                     else:
@@ -91,6 +92,8 @@ class GameLogic:
             return 2 # Empate
         else:
             return -1
+
+
 
     """def readPlay():
         play = 0
