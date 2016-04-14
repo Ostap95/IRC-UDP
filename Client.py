@@ -17,7 +17,9 @@ MSG_REJECT_INVITE = "NO"
 MSG_INVITE_RESPONSE = "INVITE"
 MSG_CHOICE = "CHOICE"
 MSG_WINNER  = "WINNER"
+MSG_TIE = "TIE"
 MSG_UNRECOGNIZED = "UNRECOGNIZED"
+MSG_NOT_LOGGED = "NOTLOGGED"
 
 
 SERVER_IP = "127.0.0.1"
@@ -61,7 +63,7 @@ def acceptInvite(msg):
 def inviteResponse(msg):
     msg = msg.split()
     if msg[1] == MSG_ACCEPT_INVITE:
-        print "It's your turn, please make a play: (CHOICE OK / CHOICE NO)"
+        print "It's your turn, please make a play: (CHOICE number)"
         board.currentBoard()
     elif msg[1] == MSG_REJECT_INVITE:
         print "Game Refused!"
@@ -84,8 +86,9 @@ def receiveChoiceGame(msg):
     print "Opponent play: " + message[1]
     board.receivePlay( (play-1)/3  , (play-1) % 3)
     board.currentBoard()
-    board.changePermission(True)
-    print "It's your turn, please make a play: (CHOICE OK / CHOICE NO)"
+    if board.checkWinner() != 2 :
+        board.changePermission(True)
+        print "It's your turn, please make a play: (CHOICE number)"
 
 """ If the client sends the CHOICE message, this function is called to update the board """
 def playChoiceGame(msg):
@@ -95,7 +98,9 @@ def playChoiceGame(msg):
     board.currentBoard()
     board.changePermission(False)
     if board.checkWinner() == 2 :
-        print ""
+        board.changePermission(True) # To not block the message receiving
+        sendMessage(client, MSG_TIE, (SERVER_IP,SERVER_PORT))
+        print "A tie!"
     if board.checkWinner() == 1 :
         board.changePermission(True) # To not block the message receiving
         sendMessage(client, MSG_WINNER, (SERVER_IP,SERVER_PORT))
@@ -111,6 +116,10 @@ def gameLost():
     print "You lost the game :("
     board.changePermission(True) # To not block the message receiving
 
+def gameTie():
+    print "A Tie!"
+    board.changePermission(True)
+
 """ MessageInterpreter interpretes the message received from the server"""
 def MessageInterpreter(msg):
     if MSG_REGISTER in msg: # Registration Message
@@ -125,6 +134,10 @@ def MessageInterpreter(msg):
         receiveChoiceGame(msg)
     if MSG_WINNER in msg:
         gameLost()
+    if MSG_TIE in msg:
+        gameTie()
+    if MSG_NOT_LOGGED in msg:
+        print "You are not registred in the server. Please use command REG [Name] to proceed with your registration. "
     if MSG_UNRECOGNIZED in msg:
         print "Your command wasn't recognized by the server! Please try another one."
 

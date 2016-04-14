@@ -3,6 +3,7 @@ import socket
 CMD_REGISTER = "REG"
 MSG_REGISTER_OK = "REG_OK"
 MSG_REGISTER_FAULT = "REG_FAULT"
+MSG_NOT_LOGGED = "NOTLOGGED"
 CMD_LIST = "LIST"
 MSG_LIST_RETURN = "LIST_RETURN"
 CMD_PLAY = "PLAY"
@@ -14,6 +15,7 @@ MSG_REJECT_INVITE = "NO"
 MSG_CHOICE = "CHOICE"
 MSG_UNRECOGNIZED = "UNRECOGNIZED"
 MSG_WINNER = "WINNER"
+MSG_TIE = "TIE"
 
 
 SERVER_PORT = 5005
@@ -146,6 +148,14 @@ def winnerAnnounce(addr):
     Send(MSG_RECEIVED, addr)
     Send(MSG_WINNER, opponentAddr)
 
+def gameTie(addr):
+    name = clients[addr][0]
+    #matchNameLookup(name, True)
+    opponentAddr = matchAddrLookup(addr)
+    clients[addr][3] = "livre"
+    clients[opponentAddr][3] = "livre"
+    Send(MSG_RECEIVED, addr)
+    Send(MSG_TIE, opponentAddr)
 
 """ Main Loop """
 while True:
@@ -153,26 +163,23 @@ while True:
     cmd = msg.decode().split()
     if cmd[0] == CMD_REGISTER:
         registerPlayer(cmd[1], addr)
+        continue # Skips for not entering the second if condition and go to the last else statement
 
-    elif cmd[0] == CMD_LIST:
-        pList = listNames()
-        Send(MSG_LIST_RETURN + " " + pList, addr)
-
-    elif cmd[0] == CMD_PLAY:
-        invitePlayer(addr, cmd[1])
-
-    elif cmd[0] == MSG_INVITE_RESPOSNE:
-        respondToInvite(addr, cmd[1])
-
-    elif cmd[0] == MSG_CHOICE:
-        forwardChoice(addr, cmd[1])
-
-    elif cmd[0] == MSG_WINNER:
-        winnerAnnounce(addr)
-
-
-    elif cmd[0] == "EXIT":
-        server.close()
-        Send(MSG_RECEIVED, addr)
+    if addr in clients:
+        if cmd[0] == CMD_LIST:
+            pList = listNames()
+            Send(MSG_LIST_RETURN + " " + pList, addr)
+        elif cmd[0] == CMD_PLAY:
+            invitePlayer(addr, cmd[1])
+        elif cmd[0] == MSG_INVITE_RESPOSNE:
+            respondToInvite(addr, cmd[1])
+        elif cmd[0] == MSG_CHOICE:
+            forwardChoice(addr, cmd[1])
+        elif cmd[0] == MSG_WINNER:
+            winnerAnnounce(addr)
+        elif cmd[0] == MSG_TIE:
+            gameTie(addr)
+        else:
+            Send(MSG_UNRECOGNIZED, addr)
     else:
-        Send(MSG_UNRECOGNIZED, addr)
+        Send(MSG_NOT_LOGGED, addr)
