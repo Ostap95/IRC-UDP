@@ -20,7 +20,8 @@ MSG_WINNER  = "WINNER"
 MSG_TIE = "TIE"
 MSG_UNRECOGNIZED = "UNRECOGNIZED"
 MSG_NOT_LOGGED = "NOTLOGGED"
-
+MSG_CHOICE_RECEIVED = "RECEIVED"
+MSG_RESET_GAME = "RESET_GAME"
 
 SERVER_IP = "127.0.0.1"
 SERVER_PORT = 5005
@@ -34,11 +35,14 @@ global board
 """ Functions that is responsible for timeout situations """
 def timeOutHandler(s, f):
     global tries # Number of times that the client tried to resent the message
+    board.changePermission(True)
     if tries < 2:
         sendMessage(client, LAST_MSG[0], (SERVER_IP,SERVER_PORT))
         tries += 1
     else:
         print "Server is Offline"
+        sendMessage(client, MSG_RESET_GAME, (SERVER_IP,SERVER_PORT))
+        board.resetGame()
 
 """ Prints the registration information based on the message received from the server """
 def RegistrationInfo(msg):
@@ -81,9 +85,10 @@ def checkChoice(msg):
 
 """ This function is called when the client receives the message with the CHOICE"""
 def receiveChoiceGame(msg):
+    choiceReceived()
     message = msg.split()
     play = int(message[1])
-    print "Opponent play: " + message[1]
+    print "Opponent played: " + message[1]
     board.receivePlay( (play-1)/3  , (play-1) % 3)
     board.currentBoard()
     if board.checkWinner() != 2 :
@@ -100,25 +105,37 @@ def playChoiceGame(msg):
     if board.checkWinner() == 2 :
         board.changePermission(True) # To not block the message receiving
         sendMessage(client, MSG_TIE, (SERVER_IP,SERVER_PORT))
+        board.resetGame()
         print "A tie!"
+
     if board.checkWinner() == 1 :
         board.changePermission(True) # To not block the message receiving
         sendMessage(client, MSG_WINNER, (SERVER_IP,SERVER_PORT))
+        board.resetGame()
         print "You won the game! Congratulations!"
 
     if board.checkWinner() == 0 :
         board.changePermission(True) # To not block the message receiving
         sendMessage(client, MSG_WINNER, (SERVER_IP,SERVER_PORT))
+        board.resetGame()
         print "You won the game! Congratulations!"
 
 
 def gameLost():
     print "You lost the game :("
+    board.resetGame()
     board.changePermission(True) # To not block the message receiving
 
 def gameTie():
     print "A Tie!"
+    board.resetGame()
     board.changePermission(True)
+
+def choiceReceived():
+    board.changePermission(True)
+    sendMessage(client, MSG_CHOICE_RECEIVED, (SERVER_IP,SERVER_PORT))
+    
+    return
 
 """ MessageInterpreter interpretes the message received from the server"""
 def MessageInterpreter(msg):
@@ -144,12 +161,13 @@ def MessageInterpreter(msg):
 """ Message to be sent to the server """
 def sendMessage(socket, msg, server):
     if board.getPermission():
+        checkChoice(msg) # Checks if the player sended the choice message
         LAST_MSG[0] = msg
         socket.sendto(msg.encode(), server)
         signal.alarm(3) # Sets the alarm for 3 seconds, meaning that the client waits for 3 seconds for the server response.
         # If the server haven't given any response whithin 3 seconds, then the client tries more 2 times to resent the message
         # After it, client displays a message saying that the server is offline
-        checkChoice(msg) # Checks if the player sended the choice message
+        #checkChoice(msg) # Checks if the player sended the choice message
     else:
         print "It's not your turn. Wait until your opponent finishes the play!"
 """ ----------------------------------------------------------"""

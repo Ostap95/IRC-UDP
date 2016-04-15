@@ -30,8 +30,10 @@ class GameLogic:
     def play(self, row, column):
         if not (row >= 0 and row < 3 and column >= 0 and column < 3):
             return False
-        if self.board[row][column] > '9':
-            return False
+
+        if self.board[row][column] != ' ':
+            print "Invalid play"
+            return
 
         if self.numPlays == 9:
             return False
@@ -49,9 +51,6 @@ class GameLogic:
     """ Updates the board based on the play made by the other player """
     def receivePlay(self, row, column):
         if not (row >= 0 and row < 3 and column >= 0 and column < 3):
-            print "here"
-            return False
-        if self.board[row][column] > '9':
             return False
 
         if self.numPlays == 9:
@@ -95,18 +94,11 @@ class GameLogic:
 
 
 
-    """def readPlay():
-        play = 0
-        position = 'X'
-        if self.player == 1:
-            position = 'X'
-        else:
-            position = 'O'
-        while True:
-            print "\n Player " + str(self.player) + ", please enter the number of the square " +\
-            "where you want to place your " + position
-            play = sys.stdin.readline()
-            if play > 9 or play < 0:
-                break
-            return play
-"""
+    def resetGame(self):
+         self.board = [[' ',  ' ',  ' '],
+                     [' ',  ' ',  ' '],
+                     [' ',  ' ',  ' ']]
+         self.numPlays = 0
+         self.mainPlayer = False
+         self.permission = True
+         self.winner = False
