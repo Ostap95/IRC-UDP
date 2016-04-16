@@ -8,6 +8,7 @@ class GameLogic:
         self.mainPlayer = False
         self.permission = True
         self.winner = False
+        self.END = None
 
     """ Prints the current board"""
     def currentBoard(self):
@@ -29,11 +30,12 @@ class GameLogic:
     """ Function used to make a play on the board """
     def play(self, row, column):
         if not (row >= 0 and row < 3 and column >= 0 and column < 3):
+            print "Invalid play"
             return False
 
         if self.board[row][column] != ' ':
             print "Invalid play"
-            return
+            return False
 
         if self.numPlays == 9:
             return False
@@ -93,6 +95,11 @@ class GameLogic:
             return -1
 
 
+    def changeEnd(self, value):
+        self.END = value
+
+    def getEnd(self):
+        return self.END
 
     def resetGame(self):
          self.board = [[' ',  ' ',  ' '],
@@ -102,3 +109,4 @@ class GameLogic:
          self.mainPlayer = False
          self.permission = True
          self.winner = False
+         self.END = None

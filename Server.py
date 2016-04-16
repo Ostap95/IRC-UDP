@@ -90,7 +90,6 @@ def respondToInvite(playerAddr, response):
         clients[playerAddr][1] = "ocupado" # change player state
         clients[addressToRespond][1] = "ocupado" # change player state
         games[playerToRespond] = clients[playerAddr][0] # Fills the game dictionary
-        print str(games)
         clients[addressToRespond][2] = clients[playerAddr][0]
     Send(MSG_RECEIVED, playerAddr)
     Send(MSG_INVITE_RESPOSNE + " " + response, addressToRespond)

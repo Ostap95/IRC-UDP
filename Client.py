@@ -31,6 +31,7 @@ LAST_MSG = [""] # Last message sent by the client to the server
 
 global tries # Number of times that the client tried to resent the message
 global board
+WINNER = None
 
 """ Functions that is responsible for timeout situations """
 def timeOutHandler(s, f):
@@ -81,52 +82,74 @@ def  checkGame(msg):
 """ Checks if the client have sended choice message """
 def checkChoice(msg):
     if MSG_CHOICE in msg:
-        playChoiceGame(msg)
+        return playChoiceGame(msg)
+    return msg
 
 """ This function is called when the client receives the message with the CHOICE"""
 def receiveChoiceGame(msg):
     choiceReceived()
-    message = msg.split()
-    play = int(message[1])
-    print "Opponent played: " + message[1]
-    board.receivePlay( (play-1)/3  , (play-1) % 3)
-    board.currentBoard()
-    if board.checkWinner() != 2 :
-        board.changePermission(True)
-        print "It's your turn, please make a play: (CHOICE number)"
+    if WINNER == None:
+        message = msg.split()
+        play = int(message[1])
+        print "Opponent played: " + message[1]
+        board.receivePlay( (play-1)/3  , (play-1) % 3)
+        board.currentBoard()
+        if board.checkWinner() != 2 :
+            board.changePermission(True)
+            print "It's your turn, please make a play: (CHOICE number)"
 
 """ If the client sends the CHOICE message, this function is called to update the board """
 def playChoiceGame(msg):
     message = msg.split()
     play = int(message[1])
-    board.play( (play-1)/3  , (play-1) % 3)
-    board.currentBoard()
-    board.changePermission(False)
+    while True:
+        if board.play( (play-1)/3  , (play-1) % 3):
+            board.currentBoard()
+            board.changePermission(False)
+            checkWinning()
+            break
+        play = int((sys.stdin.readline().split())[1]) # Read new value from the terminal
+    return "CHOICE " + str(play)
+
+""" Checks winning, losing an tie conditions """
+def checkWinning():
+    global WINNER
     if board.checkWinner() == 2 :
+        WINNER = None
+        #board.changeEnd(True)
         board.changePermission(True) # To not block the message receiving
         sendMessage(client, MSG_TIE, (SERVER_IP,SERVER_PORT))
         board.resetGame()
         print "A tie!"
 
     if board.checkWinner() == 1 :
+        WINNER = True
+        #board.changeEnd(True)
         board.changePermission(True) # To not block the message receiving
         sendMessage(client, MSG_WINNER, (SERVER_IP,SERVER_PORT))
         board.resetGame()
         print "You won the game! Congratulations!"
 
     if board.checkWinner() == 0 :
+        WINNER = True
+        #board.changeEnd(True)
         board.changePermission(True) # To not block the message receiving
         sendMessage(client, MSG_WINNER, (SERVER_IP,SERVER_PORT))
         board.resetGame()
         print "You won the game! Congratulations!"
 
-
 def gameLost():
+    global WINNER
+    WINNER = True
+    #board.changeEnd(True)
     print "You lost the game :("
     board.resetGame()
     board.changePermission(True) # To not block the message receiving
 
 def gameTie():
+    global WINNER
+    WINNER = False
+    #board.changeEnd(False)
     print "A Tie!"
     board.resetGame()
     board.changePermission(True)
@@ -134,7 +157,6 @@ def gameTie():
 def choiceReceived():
     board.changePermission(True)
     sendMessage(client, MSG_CHOICE_RECEIVED, (SERVER_IP,SERVER_PORT))
-    
     return
 
 """ MessageInterpreter interpretes the message received from the server"""
@@ -161,7 +183,7 @@ def MessageInterpreter(msg):
 """ Message to be sent to the server """
 def sendMessage(socket, msg, server):
     if board.getPermission():
-        checkChoice(msg) # Checks if the player sended the choice message
+        msg = checkChoice(msg) # Checks if the player sended the choice message
         LAST_MSG[0] = msg
         socket.sendto(msg.encode(), server)
         signal.alarm(3) # Sets the alarm for 3 seconds, meaning that the client waits for 3 seconds for the server response.
