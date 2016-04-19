@@ -3,7 +3,7 @@ import socket
 CMD_REGISTER = "REG"
 MSG_REGISTER_OK = "REG_OK"
 MSG_REGISTER_FAULT = "REG_FAULT"
-MSG_NOT_LOGGED = "NOTLOGGED"
+MSG_NOT_LOGGED = "NOTLOGGED" #
 CMD_LIST = "LIST"
 MSG_LIST_RETURN = "LIST_RETURN"
 CMD_PLAY = "PLAY"
@@ -13,11 +13,12 @@ MSG_INVITE_RESPOSNE = "INVITE"
 MSG_ACCEPT_INVITE = "OK"
 MSG_REJECT_INVITE = "NO"
 MSG_CHOICE = "CHOICE"
-MSG_UNRECOGNIZED = "UNRECOGNIZED"
+MSG_UNRECOGNIZED = "UNRECOGNIZED" #
 MSG_WINNER = "WINNER"
 MSG_TIE = "TIE"
 MSG_CHOICE_RECEIVED = "RECEIVED"
 MSG_RESET_GAME = "RESET_GAME"
+MSG_EXIT = "EXIT"
 
 SERVER_PORT = 5005
 SERVER_HOST = "127.0.0.1"
@@ -42,6 +43,15 @@ def registerPlayer(name, addr):
       Send(MSG_REGISTER_FAULT, addr) # sends REG_FAULT to the client
       return
 
+""" Removes player from the database """
+def removePlayer(addr):
+    if addr in clients:
+        name = clients[addr][0]
+        del clients[addr]
+        del addrs[name]
+        deleteGame(name)
+
+
 """ Sends a particular message to the specific address
  msg: Message | info: additional information to the Message | addr: Adrress to send """
 def Send(msg, addr, info = ""):
@@ -65,6 +75,7 @@ def listNames():
         buff += clients[key][0] + ":" + clients[key][1] + " "; # dividir por um espaco para poder fazer split em clnt
     return buff;
 
+""" Delete player from game list """
 def deleteGame(playerName):
     for i in games.keys():
         if i == playerName or games[i] == playerName:
@@ -94,41 +105,52 @@ def respondToInvite(playerAddr, response):
     Send(MSG_RECEIVED, playerAddr)
     Send(MSG_INVITE_RESPOSNE + " " + response, addressToRespond)
 
+""" Forwards game choice msg to another player """
 def forwardChoice(playerAddr, choice):
-    opponentAddr = matchAddrLookup(playerAddr)
-    #Send(MSG_RECEIVED, playerAddr)
-    Send(MSG_CHOICE + " " + choice, opponentAddr)
+    name = clients[playerAddr][0]
+    for i in games.keys():
+        if i == name or games[i] == name:
+            opponentAddr = matchAddrLookup(playerAddr)
+            #Send(MSG_RECEIVED, playerAddr)
+            Send(MSG_CHOICE + " " + choice, opponentAddr)
 
+""" When the player receives forwared choice """
 def choiceReceived(addr):
     Send(MSG_RECEIVED, addr)
     opponentAddr = matchAddrLookup(addr)
     Send(MSG_RECEIVED, opponentAddr)
 
+""" """
 def winnerAnnounce(addr):
     name = clients[addr][0]
-    opponentAddr = matchAddrLookup(addr)
-    clients[addr][1] = "livre"
-    clients[opponentAddr][1] = "livre"
+    opponentAddr = clearGameInformation(addr)
     deleteGame(name)
     Send(MSG_RECEIVED, addr)
     Send(MSG_WINNER, opponentAddr)
 
+""" Resets """
 def gameTie(addr):
     name = clients[addr][0]
-    opponentAddr = matchAddrLookup(addr)
-    clients[addr][1] = "livre"
-    clients[opponentAddr][1] = "livre"
+    opponentAddr = clearGameInformation(addr)
     deleteGame(name)
     Send(MSG_RECEIVED, addr)
     Send(MSG_TIE, opponentAddr)
 
+""" Erases game data for a given game """
 def resetGame(addr):
     name = clients[addr][0]
+    opponentAddr = clearGameInformation(addr)
+    Send(MSG_RECEIVED, addr)
+    deleteGame(name)
+
+""" Set player and player opponend state do free """
+def clearGameInformation(addr):
     opponentAddr = matchAddrLookup(addr)
     clients[addr][1] = "livre"
     clients[opponentAddr][1] = "livre"
-    Send(MSG_RECEIVED, addr)
-    deleteGame(name)
+    return opponentAddr
+
+
 
 """ Main Loop """
 while True:
@@ -156,6 +178,8 @@ while True:
             choiceReceived(addr)
         elif cmd[0] == MSG_RESET_GAME:
             resetGame(addr)
+        elif cmd[0] == MSG_EXIT:
+            removePlayer(addr)
         else:
             Send(MSG_UNRECOGNIZED, addr)
     else:

@@ -23,18 +23,19 @@ MSG_NOT_LOGGED = "NOTLOGGED"
 MSG_CHOICE_RECEIVED = "RECEIVED"
 MSG_RESET_GAME = "RESET_GAME"
 
-SERVER_IP = "127.0.0.1"
-SERVER_PORT = 5005
+SERVER_IP = "127.0.0.1" # or localhost
+SERVER_PORT = 5005 # Server Port
 BUFF_SIZE = 1024 # Buffer size
 
 LAST_MSG = [""] # Last message sent by the client to the server
 
 global tries # Number of times that the client tried to resent the message
-global board
-WINNER = None
+global board # board variable representing players board
+WINNER = None # Controls the flow of the
 
 """ Functions that is responsible for timeout situations """
 def timeOutHandler(s, f):
+    global WINNER
     global tries # Number of times that the client tried to resent the message
     board.changePermission(True)
     if tries < 2:
@@ -42,7 +43,8 @@ def timeOutHandler(s, f):
         tries += 1
     else:
         print "Server is Offline"
-        sendMessage(client, MSG_RESET_GAME, (SERVER_IP,SERVER_PORT))
+        sendMessage(client, MSG_RESET_GAME, (SERVER_IP,SERVER_PORT)) # If the opponent is offline, asks the server to erase game information
+        WINNER = None
         board.resetGame()
 
 """ Prints the registration information based on the message received from the server """
@@ -60,11 +62,13 @@ def printPlayerList(msg):
         print msg[i]
     print "------------------------------"
 
+""" Messafe to print when the player receives invite message """
 def acceptInvite(msg):
     msg = msg.split()
     name = msg[1]
     print name + " Invited you to play. Accept? (INVITE OK / INVITE NO)"
 
+""" Function used to print messages based on the invite response from the opponent """
 def inviteResponse(msg):
     msg = msg.split()
     if msg[1] == MSG_ACCEPT_INVITE:
@@ -114,7 +118,7 @@ def playChoiceGame(msg):
 """ Checks winning, losing an tie conditions """
 def checkWinning():
     global WINNER
-    if board.checkWinner() == 2 :
+    if board.checkWinner() == 2 : # Game Tie
         WINNER = None
         #board.changeEnd(True)
         board.changePermission(True) # To not block the message receiving
@@ -122,22 +126,25 @@ def checkWinning():
         board.resetGame()
         print "A tie!"
 
-    if board.checkWinner() == 1 :
+    if board.checkWinner() == 1 : # Player 1 is the winner
         WINNER = True
         #board.changeEnd(True)
         board.changePermission(True) # To not block the message receiving
         sendMessage(client, MSG_WINNER, (SERVER_IP,SERVER_PORT))
         board.resetGame()
+        WINNER = None
         print "You won the game! Congratulations!"
 
-    if board.checkWinner() == 0 :
+    if board.checkWinner() == 0 : # Player 2 is the winner
         WINNER = True
         #board.changeEnd(True)
         board.changePermission(True) # To not block the message receiving
         sendMessage(client, MSG_WINNER, (SERVER_IP,SERVER_PORT))
         board.resetGame()
+        WINNER = None
         print "You won the game! Congratulations!"
 
+""" """
 def gameLost():
     global WINNER
     WINNER = True
@@ -145,6 +152,7 @@ def gameLost():
     print "You lost the game :("
     board.resetGame()
     board.changePermission(True) # To not block the message receiving
+    WINNER = None
 
 def gameTie():
     global WINNER
@@ -153,6 +161,7 @@ def gameTie():
     print "A Tie!"
     board.resetGame()
     board.changePermission(True)
+    WINNER = None
 
 def choiceReceived():
     board.changePermission(True)
@@ -182,7 +191,7 @@ def MessageInterpreter(msg):
 
 """ Message to be sent to the server """
 def sendMessage(socket, msg, server):
-    if board.getPermission():
+    if board.getPermission(): # If the player has permission to send any message
         msg = checkChoice(msg) # Checks if the player sended the choice message
         LAST_MSG[0] = msg
         socket.sendto(msg.encode(), server)
